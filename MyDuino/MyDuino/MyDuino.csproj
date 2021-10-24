@@ -33,6 +33,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Users\naqui\Downloads\Microsoft.Xna.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Nefarius.ViGEm.Client, Version=1.17.178.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Nefarius.ViGEm.Client.1.17.178\lib\net452\Nefarius.ViGEm.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Soopah.Xna.Input">
+      <HintPath>..\..\..\..\Users\naqui\Downloads\Soopah.Xna.Input.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -48,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
