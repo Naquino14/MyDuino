@@ -83,16 +83,16 @@ namespace MyDuino
             {
                 // parse and feed
                 bu = payload[0 + signature.Length] == '1';
-                bd = payload[1 + signature.Length] == 1;
-                bl = payload[2 + signature.Length] == 1;
-                br = payload[3 + signature.Length] == 1;
-                b1 = payload[4 + signature.Length] == 1;
-                b2 = payload[5 + signature.Length] == 1;
-                b3 = payload[6 + signature.Length] == 1;
-                b4 = payload[7 + signature.Length] == 1;
-                b5 = payload[8 + signature.Length] == 1;
-                b6 = payload[9 + signature.Length] == 1;
-                b7 = payload[10 + signature.Length] == 1;
+                bd = payload[1 + signature.Length] == '1';
+                bl = payload[2 + signature.Length] == '1';
+                br = payload[3 + signature.Length] == '1';
+                b1 = payload[4 + signature.Length] == '1';
+                b2 = payload[5 + signature.Length] == '1';
+                b3 = payload[6 + signature.Length] == '1';
+                b4 = payload[7 + signature.Length] == '1';
+                b5 = payload[8 + signature.Length] == '1';
+                b6 = payload[9 + signature.Length] == '1';
+                b7 = payload[10 + signature.Length] == '1';
 
                 if (bu && bl)
                     controller.SetDPadDirection(DualShock4DPadDirection.Northwest);
