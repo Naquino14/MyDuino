@@ -10,7 +10,7 @@ b5 = 10,
 b6 = 11,
 b7 = 12;
 
-String signature = "gda";
+String signature = "g";
 
 void setup() {
   pinMode(bu, INPUT_PULLUP);
@@ -24,7 +24,7 @@ void setup() {
   pinMode(b5, INPUT_PULLUP);
   pinMode(b6, INPUT_PULLUP);
   pinMode(b7, INPUT_PULLUP);
-  Serial.begin(9600);
+  Serial.begin(74880);
 
 }
 

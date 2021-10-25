@@ -24,7 +24,7 @@ namespace MyDuino
         SerialPort serialPort;
         int tryCom = 0;
 
-        readonly string signature = "gda";
+        readonly string signature = "g";
 
         bool bu = false,
             bd = false,
@@ -40,18 +40,20 @@ namespace MyDuino
 
         ViGEmClient client;
         IDualShock4Controller controller;
+        Thread readThread;
+
+        readonly int baudRate = 74880;
+        readonly int payloadSize = 96;
 
         public void Start()
         {
-            //Console.WriteLine("Press Ctrl+C to stop.");
-
             client = new ViGEmClient();
 
             controller = client.CreateDualShock4Controller();
 
             try
             {
-                serialPort = new SerialPort($"COM{tryCom}", 9600, Parity.None, 8, StopBits.One);
+                serialPort = new SerialPort($"COM{tryCom}", baudRate, Parity.None, 8, StopBits.One);
 
                 serialPort.Open();
             } catch (IOException ex)
@@ -68,90 +70,90 @@ namespace MyDuino
 
             controller.Connect();
 
-            serialPort.DataReceived += new SerialDataReceivedEventHandler(OnPayloadRecieved);
+            serialPort.ReceivedBytesThreshold = payloadSize;
 
-            Console.WriteLine("Press any key to stop");
+            Console.WriteLine("Press enter to stop");
+
+            readThread = new Thread(OnReadData);
+            readThread.Start();
+
             Console.ReadLine();
             OnApplicationExit(null, null);
         }
 
-        void OnPayloadRecieved(object o, SerialDataReceivedEventArgs e)
+        void OnReadData()
         {
-            string payload = serialPort.ReadLine();
-            //Console.WriteLine(payload);
-            if (payload.Contains(signature))
+            while (true)
             {
-                // parse and feed
-                bu = payload[0 + signature.Length] == '1';
-                bd = payload[1 + signature.Length] == '1';
-                bl = payload[2 + signature.Length] == '1';
-                br = payload[3 + signature.Length] == '1';
-                b1 = payload[4 + signature.Length] == '1';
-                b2 = payload[5 + signature.Length] == '1';
-                b3 = payload[6 + signature.Length] == '1';
-                b4 = payload[7 + signature.Length] == '1';
-                b5 = payload[8 + signature.Length] == '1';
-                b6 = payload[9 + signature.Length] == '1';
-                b7 = payload[10 + signature.Length] == '1';
+                string payload = serialPort.ReadLine();
+                Console.WriteLine(payload);
+                if (payload.Contains(signature))
+                {
+                    // parse and feed
+                    bu = payload[0 + signature.Length] == '1';
+                    bd = payload[1 + signature.Length] == '1';
+                    bl = payload[2 + signature.Length] == '1';
+                    br = payload[3 + signature.Length] == '1';
+                    b1 = payload[4 + signature.Length] == '1';
+                    b2 = payload[5 + signature.Length] == '1';
+                    b3 = payload[6 + signature.Length] == '1';
+                    b4 = payload[7 + signature.Length] == '1';
+                    b5 = payload[8 + signature.Length] == '1';
+                    b6 = payload[9 + signature.Length] == '1';
+                    b7 = payload[10 + signature.Length] == '1';
 
-                if (bu && bl)
-                    controller.SetDPadDirection(DualShock4DPadDirection.Northwest);
-                else if (bu && br)
-                    controller.SetDPadDirection(DualShock4DPadDirection.Northeast);
-                else if (bd && bl)
-                    controller.SetDPadDirection(DualShock4DPadDirection.Southwest);
-                else if (bd && br)
-                    controller.SetDPadDirection(DualShock4DPadDirection.Southeast);
-                else if (bu)
-                    controller.SetDPadDirection(DualShock4DPadDirection.North);
-                else if (bd)
-                    controller.SetDPadDirection(DualShock4DPadDirection.South);
-                else if (br)
-                    controller.SetDPadDirection(DualShock4DPadDirection.East);
-                else if (bl)
-                    controller.SetDPadDirection(DualShock4DPadDirection.West);
-                else
-                    controller.SetDPadDirection(DualShock4DPadDirection.None);
+                    if (bu && bl)
+                        controller.SetDPadDirection(DualShock4DPadDirection.Northwest);
+                    else if (bu && br)
+                        controller.SetDPadDirection(DualShock4DPadDirection.Northeast);
+                    else if (bd && bl)
+                        controller.SetDPadDirection(DualShock4DPadDirection.Southwest);
+                    else if (bd && br)
+                        controller.SetDPadDirection(DualShock4DPadDirection.Southeast);
+                    else if (bu)
+                        controller.SetDPadDirection(DualShock4DPadDirection.North);
+                    else if (bd)
+                        controller.SetDPadDirection(DualShock4DPadDirection.South);
+                    else if (br)
+                        controller.SetDPadDirection(DualShock4DPadDirection.East);
+                    else if (bl)
+                        controller.SetDPadDirection(DualShock4DPadDirection.West);
+                    else
+                        controller.SetDPadDirection(DualShock4DPadDirection.None);
 
-                if (b1) // square
-                    controller.SetButtonState(DualShock4Button.Square, true);
+                    if (b1) // square
+                        controller.SetButtonState(DualShock4Button.Square, true);
+                    else
+                        controller.SetButtonState(DualShock4Button.Square, false);
+                    if (b2) // cross
+                        controller.SetButtonState(DualShock4Button.Cross, true);
+                    else
+                        controller.SetButtonState(DualShock4Button.Cross, false);
+                    if (b3) // triangle
+                        controller.SetButtonState(DualShock4Button.Triangle, true);
+                    else
+                        controller.SetButtonState(DualShock4Button.Triangle, false);
+                    if (b4) // circle
+                        controller.SetButtonState(DualShock4Button.Circle, true);
+                    else
+                        controller.SetButtonState(DualShock4Button.Circle, false);
+                    if (b5) // right shoulder
+                        controller.SetButtonState(DualShock4Button.ShoulderRight, true);
+                    else
+                        controller.SetButtonState(DualShock4Button.ShoulderRight, false);
+                    if (b6) // left shoulder
+                        controller.SetButtonState(DualShock4Button.ShoulderLeft, true);
+                    else
+                        controller.SetButtonState(DualShock4Button.ShoulderLeft, false);
+                }
                 else
-                    controller.SetButtonState(DualShock4Button.Square, false);
-                if (b2) // cross
-                    controller.SetButtonState(DualShock4Button.Cross, true);
-                else
-                    controller.SetButtonState(DualShock4Button.Cross, false);
-                if (b3) // triangle
-                    controller.SetButtonState(DualShock4Button.Triangle, true);
-                else
-                    controller.SetButtonState(DualShock4Button.Triangle, false);
-                if (b4) // circle
-                    controller.SetButtonState(DualShock4Button.Circle, true);
-                else
-                    controller.SetButtonState(DualShock4Button.Circle, false);
-                if (b5) // right shoulder
-                    controller.SetButtonState(DualShock4Button.ShoulderRight, true);
-                else
-                    controller.SetButtonState(DualShock4Button.ShoulderRight, false);
-                if (b5) // left shoulder
-                    controller.SetButtonState(DualShock4Button.ShoulderLeft, true);
-                else
-                    controller.SetButtonState(DualShock4Button.ShoulderLeft, false);
-                if (b6) // right trigger
-                    controller.SetSliderValue(DualShock4Slider.RightTrigger, 255);
-                else
-                    controller.SetSliderValue(DualShock4Slider.RightTrigger, 0);
-                if (b6) // left trigger
-                    controller.SetSliderValue(DualShock4Slider.LeftTrigger, 255);
-                else
-                    controller.SetSliderValue(DualShock4Slider.LeftTrigger, 0);
+                    Console.WriteLine("waiting for valid data.");
             }
-            else
-                Console.WriteLine("waiting for valid data.");
         }
 
         public void OnApplicationExit(object s, EventArgs e)
         {
+            readThread.Abort();
             controller.Disconnect();
             Environment.Exit(0);
         }
