@@ -2,6 +2,7 @@
 using Nefarius.ViGEm.Client.Targets;
 using Nefarius.ViGEm.Client.Targets.DualShock4;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Threading;
@@ -12,17 +13,45 @@ namespace MyDuino
     {
         static void Main(string[] args)
         {
-            //Process gameProcess = Process.Start(args[0]);
-            Backer backer = new Backer();
-            backer.Start();
-            //gameProcess.Exited += backer.OnApplicationExit;
+            ArduinoReader arduinoReader = new ArduinoReader();
+            if (args.Length != 0)
+            {
+                bool useDRPEverything = args[0] == "-drp";
+                if (args[0] == "-drp")
+                {
+                    foreach (var arg in args)
+                        Console.WriteLine(arg);
+                    Console.WriteLine($"\"{args[2]}\" \"{args[3]}\"");
+                    ProcessStartInfo drpPSI = new ProcessStartInfo // -drp, path to tool, argument 0, argument 1
+                    {
+                        FileName = args[1],
+                        Arguments = $"\"{args[2]}\" \"{args[3]}\""
+                    };
+                    Process drp = Process.Start(drpPSI);
+                    drp.EnableRaisingEvents = true;
+                    drp.Exited += arduinoReader.OnApplicationExit;
+                }
+                else
+                {
+                    Process gameProcess = Process.Start(args[0]);
+                    gameProcess.EnableRaisingEvents = true;
+                    gameProcess.Exited += arduinoReader.OnApplicationExit;
+                }
+                
+                
+            }
+            arduinoReader.Start();
         }
     }
 
-    public class Backer 
+    public class ArduinoReader 
     {
+        public ArduinoReader(Process toolProcess = null) => this.toolProcess = toolProcess;
+
+        Process toolProcess;
         SerialPort serialPort;
         int tryCom = 0;
+        readonly int maxTryComs = 6;
 
         readonly string signature = "g";
 
@@ -43,23 +72,30 @@ namespace MyDuino
         Thread readThread;
 
         readonly int baudRate = 74880;
-        readonly int payloadSize = 96;
+        int payloadSize;
 
         public void Start()
         {
+            payloadSize = signature.Length * 8 + 88;
             client = new ViGEmClient();
-
             controller = client.CreateDualShock4Controller();
-
             try
             {
                 serialPort = new SerialPort($"COM{tryCom}", baudRate, Parity.None, 8, StopBits.One);
-
                 serialPort.Open();
-            } catch (IOException ex)
+            }
+            catch (IOException ex)
             {
-                if (tryCom > 6)
-                    throw new Exception();
+                try 
+                {
+                    if (tryCom > maxTryComs)
+                        throw new Exception("No boards found or connected to this device.");
+                } catch (Exception te)
+                { 
+                    Console.WriteLine($"{te.ToString()}\nPress any key to close."); 
+                    Console.ReadLine();
+                    Environment.Exit(-1);
+                }
                 Console.WriteLine($"Port at COM{tryCom} not found.");
                 tryCom++;
                 serialPort.Close();
@@ -67,16 +103,11 @@ namespace MyDuino
                 Thread.Sleep(500);
                 Start();
             }
-
             controller.Connect();
-
             serialPort.ReceivedBytesThreshold = payloadSize;
-
             Console.WriteLine("Press enter to stop");
-
             readThread = new Thread(OnReadData);
             readThread.Start();
-
             Console.ReadLine();
             OnApplicationExit(null, null);
         }
@@ -86,10 +117,11 @@ namespace MyDuino
             while (true)
             {
                 string payload = serialPort.ReadLine();
-                Console.WriteLine(payload);
+                //Console.WriteLine(payload);
                 if (payload.Contains(signature))
                 {
-                    // parse and feed
+                    #region parsing
+
                     bu = payload[0 + signature.Length] == '1';
                     bd = payload[1 + signature.Length] == '1';
                     bl = payload[2 + signature.Length] == '1';
@@ -101,6 +133,10 @@ namespace MyDuino
                     b5 = payload[8 + signature.Length] == '1';
                     b6 = payload[9 + signature.Length] == '1';
                     b7 = payload[10 + signature.Length] == '1';
+
+                    #endregion
+
+                    #region D Pad
 
                     if (bu && bl)
                         controller.SetDPadDirection(DualShock4DPadDirection.Northwest);
@@ -120,6 +156,10 @@ namespace MyDuino
                         controller.SetDPadDirection(DualShock4DPadDirection.West);
                     else
                         controller.SetDPadDirection(DualShock4DPadDirection.None);
+
+                    #endregion
+
+                    #region Buttons
 
                     if (b1) // square
                         controller.SetButtonState(DualShock4Button.Square, true);
@@ -145,16 +185,20 @@ namespace MyDuino
                         controller.SetButtonState(DualShock4Button.ShoulderLeft, true);
                     else
                         controller.SetButtonState(DualShock4Button.ShoulderLeft, false);
+
+                    #endregion
                 }
                 else
                     Console.WriteLine("waiting for valid data.");
             }
         }
 
-        public void OnApplicationExit(object s, EventArgs e)
+        public void OnApplicationExit(object s, EventArgs u)
         {
             readThread.Abort();
             controller.Disconnect();
+            if (toolProcess != null)
+                toolProcess.Kill();
             Environment.Exit(0);
         }
     }
