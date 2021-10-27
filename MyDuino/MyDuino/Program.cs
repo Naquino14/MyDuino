@@ -19,9 +19,6 @@ namespace MyDuino
                 bool useDRPEverything = args[0] == "-drp";
                 if (args[0] == "-drp")
                 {
-                    foreach (var arg in args)
-                        Console.WriteLine(arg);
-                    Console.WriteLine($"\"{args[2]}\" \"{args[3]}\"");
                     ProcessStartInfo drpPSI = new ProcessStartInfo // -drp, path to tool, argument 0, argument 1
                     {
                         FileName = args[1],
@@ -37,8 +34,6 @@ namespace MyDuino
                     gameProcess.EnableRaisingEvents = true;
                     gameProcess.Exited += arduinoReader.OnApplicationExit;
                 }
-                
-                
             }
             arduinoReader.Start();
         }
@@ -105,7 +100,7 @@ namespace MyDuino
             }
             controller.Connect();
             serialPort.ReceivedBytesThreshold = payloadSize;
-            Console.WriteLine("Press enter to stop");
+            Console.WriteLine("Board Found!\nPress enter to stop");
             readThread = new Thread(OnReadData);
             readThread.Start();
             Console.ReadLine();
